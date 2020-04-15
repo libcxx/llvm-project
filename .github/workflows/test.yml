@@ -11,7 +11,7 @@ on:
 
 
 jobs:
-  debug:
+  debug-builds:
     runs-on: [libcxx-builder]
     steps:
     - name: Dump GitHub context
@@ -20,33 +20,59 @@ jobs:
       run: echo "$GITHUB_CONTEXT"
     - uses: libcxx/actions/build@master
       with:
-        repository: ${{ github.event.client_payload.repository }}
-        ref: ${{ github.event.client_payload.ref }}
+        repository: ${{ github.repository }}
+        ref: ${{ github.ref }}
         projects: |
           libcxx
           libcxxabi
         args: |
           -DCMAKE_C_COMPILER=clang
           -DCMAKE_CXX_COMPILER=clang++
-    - uses: libcxx/actions/test@master
-      id: 't1'
+    - name: 'Test C++2a'
+      uses: libcxx/actions/test@master
+      id: 'cxx2a'
       with:
-        id: 'libcxxabi'
-        projects: |
-          libcxxabi
-    - uses: libcxx/actions/test@master
-      with:
-        id: 'modules'
+        id: 'cxx2a'
         args: |
           --param=enable_modules=true
-      if: ${{ steps.t1.outputs.passing_tests }} > 0
-    - uses: libcxx/actions/test@master
+        projects: |
+          libcxx
+          libcxxabi
+    - name: 'Test C++03'
+      uses: libcxx/actions/test@master
+      id: 'cxx03'
       with:
         id: 'cxx03'
         args: |
-          '--param=std=c++03'
+          --param=std=c++03
         projects: |
           libcxx
-      if:
+      if: ${{ steps.cxx2a.outputs.passing_tests }} > 0
+  asan-builds:
+    runs-on: [libcxx-builder]
+    steps:
+    - uses: libcxx/actions/build@master
+      with:
+        repository: ${{ github.repository }}
+        ref: ${{ github.ref }}
+        projects: |
+          libcxx
+          libcxxabi
+        args: |
+          -DCMAKE_C_COMPILER=clang
+          -DCMAKE_CXX_COMPILER=clang++
+          -DLLVM_ENABLE_SANITIZER=Address
+          -DLIBCXX_ABI_UNSTABLE=ON
+    - name: 'Test C++2a'
+      uses: libcxx/actions/test@master
+      id: 'cxx2a'
+      with:
+        id: 'cxx2a'
+        args: |
+          --param=enable_modules=true
+        projects: |
+          libcxx
+          libcxxabi
+
 
 
