@@ -1,8 +1,13 @@
 name: Build Runtimes
 
 on:
-  repository_dispatch:
-    types: [build_request]
+  push:
+    paths:
+    - 'libcxx/**/'
+    - 'libcxxabi/**'
+    - 'libunwind/**'
+    - 'llvm/utils/lit/**'
+    - 'llvm/cmake/**'
 
 
 jobs:
